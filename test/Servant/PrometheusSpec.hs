@@ -40,7 +40,7 @@ spec = describe "servant-prometheus" $ do
         it "collects number of request" $
           withApp q $ \port m -> do
             mgr <- newManager defaultManagerSettings
-            let runFn :: ClientM a -> IO (Either ServantError a)
+            let runFn :: ClientM a -> IO (Either ClientError a)
 #if MIN_VERSION_servant_client(0,13,0)
                 env = ClientEnv mgr (BaseUrl Http "localhost" port "") Nothing
 #else
