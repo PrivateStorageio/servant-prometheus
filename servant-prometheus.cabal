@@ -19,9 +19,9 @@ source-repository HEAD
 library
   exposed-modules:     Servant.Prometheus
   hs-source-dirs:      lib
-  build-depends:       base >= 4.7 && < 4.12
+  build-depends:       base >= 4.7 && < 4.13
                      , prometheus-client >= 1.0
-                     , servant > 0.10 && < 0.14
+                     , servant > 0.16 && < 0.17
                      , http-types
                      , text
                      , time
