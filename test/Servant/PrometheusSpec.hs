@@ -27,7 +27,7 @@ import           Test.Hspec
 
 import           Prometheus                                 (getCounter,
                                                              getVectorWith)
-import           Servant.Prometheus
+import qualified Servant.Prometheus as SP
 
 
 -- * Spec
@@ -50,33 +50,33 @@ spec = describe "servant-prometheus" $ do
             _ <- runFn $ getEp "name" Nothing
             _ <- runFn $ postEp (Greet "hi")
             _ <- runFn $ deleteEp "blah"
-            case H.lookup "hello.:name.GET" m of
+            case (H.lookup "hello.:name.GET" m) :: Maybe SP.Meters of
               Nothing -> fail "Expected some value"
               Just v -> do
-                r <- getVectorWith getCounter (metersResponses v)
+                r <- getVectorWith (SP.metersResponses v) getCounter
                 Prelude.lookup "2XX" r `shouldBe` Just 1.0
             case H.lookup "greet.POST" m of
               Nothing -> fail "Expected some value"
               Just v  -> do
-                r <- getVectorWith getCounter (metersResponses v)
+                r <- getVectorWith (SP.metersResponses v) getCounter
                 Prelude.lookup "2XX" r `shouldBe` Just 1.0
             case H.lookup "greet.:greetid.DELETE" m of
               Nothing -> fail "Expected some value"
               Just v  -> do
-                r <- getVectorWith getCounter (metersResponses v)
+                r <- getVectorWith (SP.metersResponses v) getCounter
                 Prelude.lookup "2XX" r `shouldBe` Just 1.0
         it "has all endpoints" $
           withApp q $ \_ m ->
             sort (H.keys m) `shouldBe` sort ("unknown":Prelude.map
                                                 (\(ps,method) -> T.intercalate "." $ ps <> [T.decodeUtf8 method])
-                                                (getEndpoints testApi))
+                                                (SP.getEndpoints testApi))
         -- TODO: Figure out how to test quantiles are being made with WithQuantiles
 
 
-  t NoQuantiles
-  t WithQuantiles
+  t SP.NoQuantiles
+  t SP.WithQuantiles
   it "is comprehensive" $ do
-    let _typeLevelTest = monitorServant comprehensiveAPI undefined undefined undefined
+    let _typeLevelTest = SP.monitorServant comprehensiveAPI undefined undefined undefined
     True `shouldBe` True
 
 
@@ -127,7 +127,7 @@ server = helloH :<|> postGreetH :<|> deleteGreetH
 test :: Application
 test = serve testApi server
 
-withApp :: MeasureQuantiles -> (Port -> H.HashMap Text Meters -> IO a) -> IO a
+withApp :: SP.MeasureQuantiles -> (Port -> H.HashMap Text SP.Meters -> IO a) -> IO a
 withApp qs a = do
-  ms <- makeMeters testApi qs
-  withApplication (return $ monitorServant testApi ms test) $ \p -> a p ms
+  ms <- SP.makeMeters testApi qs
+  withApplication (return $ SP.monitorServant testApi ms test) $ \p -> a p ms
